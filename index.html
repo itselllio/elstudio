@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>AUTOFOTO — Christmas Photobooth</title>
+<meta name="description" content="A vintage Christmas photobooth. Four shots, one strip, no app." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📸</text></svg>" />
+<link rel="stylesheet" href="styles.css?v=samples-1" />
+</head>
+<body class="screen-landing" data-screen="landing">
+
+<!-- ══════════════════════════ SCREEN 1 — LANDING ══════════════════════════ -->
+<section class="screen landing" id="screen-landing">
+  <header class="landing-head">
+    <h1 class="wordmark">el studio</h1>
+    <p class="tagline">four pictures &middot; one strip</p>
+  </header>
+
+  <div class="booth-stage" id="booth-stage">
+    <div class="booth-wrap">
+      <img class="booth-img" src="assets/booth-line-art.svg?v=8" alt="Pencil drawing of a vintage photo booth with Snoopy and Woodstock" />
+
+      <!-- interactive hotspot over the coin slot -->
+      <button class="coin-hotspot" id="coin-hotspot" type="button" aria-label="Insert a coin to start the photobooth">
+        <span class="coin-ring"></span>
+      </button>
+      <span class="coin-label" aria-hidden="true">click here</span>
+    </div>
+  </div>
+
+  <div class="landing-foot">
+    <p class="hint" id="landing-hint" hidden></p>
+    <p class="camera-error" id="camera-error" role="status" hidden></p>
+    <button class="demo-link" id="demo-btn" type="button" hidden>No camera? Try a demo roll &rarr;</button>
+  </div>
+</section>
+
+<!-- ══════════════════════════ SCREEN 2 — CAPTURE ══════════════════════════ -->
+<section class="screen capture" id="screen-capture" hidden>
+  <div class="curtain curtain-left" aria-hidden="true"></div>
+  <div class="curtain curtain-right" aria-hidden="true"></div>
+
+  <div class="capture-inner">
+    <div class="capture-stage">
+    <div class="viewfinder" id="viewfinder">
+      <video id="video" playsinline autoplay muted></video>
+      <!-- the composed live view: velvet backdrop + cut-out subject + film grade -->
+      <canvas id="preview-canvas" width="720" height="960"></canvas>
+
+      <!-- SMPTE-style countdown overlay -->
+      <div class="countdown" id="countdown" hidden aria-hidden="true">
+        <span class="count-num" id="count-num">3</span>
+      </div>
+
+      <div class="flash" id="flash" aria-hidden="true"></div>
+
+      <div class="corner-badge">
+        <span id="shot-counter">1/4</span>
+      </div>
+      <div class="progress-dots" id="progress-dots">
+        <i></i><i></i><i></i><i></i>
+      </div>
+    </div>
+    <div class="shot-rail" id="shot-rail" aria-label="Captured photos">
+      <button type="button" aria-label="Retake photo 1" hidden><canvas width="180" height="240"></canvas></button><button type="button" aria-label="Retake photo 2" hidden><canvas width="180" height="240"></canvas></button><button type="button" aria-label="Retake photo 3" hidden><canvas width="180" height="240"></canvas></button><button type="button" aria-label="Retake photo 4" hidden><canvas width="180" height="240"></canvas></button>
+    </div>
+    </div>
+
+    <div class="capture-controls">
+      <p class="control-note" id="control-note">click the coin and smile!!!</p>
+
+      <button class="coin-btn" id="shutter-btn" type="button" aria-label="Insert a coin to take the four pictures">
+        <span class="coin-disc"><img src="assets/snoopy-coin.png" alt="" /></span>
+      </button>
+      <button class="btn ghost review-continue" id="review-continue" type="button" hidden>Continue</button>
+
+      <p class="background-status" id="background-status" role="status" hidden></p>
+    </div>
+  </div>
+</section>
+
+<!-- A short transition while the finished strip comes out of the booth. -->
+<section class="screen printing" id="screen-printing" hidden aria-live="polite">
+  <div class="printing-machine">
+    <div class="printing-sign"><span class="print-screw"></span><span class="print-screw"></span><p>your photos<br>are on their way</p><span class="print-screw"></span><span class="print-screw"></span></div>
+    <div class="printing-slot">
+      <div class="printing-mouth"></div>
+      <div class="print-window"><canvas id="printing-strip"></canvas></div>
+    </div>
+    <p class="printing-note">printing your strip…</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════ SCREEN 3 — EDITOR ══════════════════════════ -->
+<section class="screen editor" id="screen-editor" hidden>
+  <header class="editor-head">
+    <div>
+      <h2 class="editor-title">Your Strip</h2>
+      <p class="editor-sub">Pick a backdrop, add some polka dots, sprinkle the stickers.</p>
+      <p class="editor-hint">Drag any sticker on the strip to move it · scroll to resize · double-click to remove.</p>
+    </div>
+    <div class="editor-head-actions">
+      <button class="btn ghost" id="download-btn" type="button">Download</button>
+      <button class="btn ghost" id="share-btn" type="button">Share</button>
+      <button class="btn ghost" id="print-btn" type="button">Print</button>
+      <button class="btn ghost" id="retake-btn" type="button">Retake</button>
+    </div>
+  </header>
+  <div class="editor-social"><a href="https://www.instagram.com/itselll05/" target="_blank" rel="noopener noreferrer">Tag me @itselll05</a><span id="action-status" role="status"></span></div>
+
+  <div class="editor-body">
+    <!-- live preview -->
+    <div class="preview-pane">
+      <div class="strip-holder">
+        <canvas id="strip-canvas" width="900" height="4188"></canvas>
+      </div>
+    </div>
+
+    <!-- controls -->
+    <aside class="controls-pane">
+
+      <section class="ctl">
+        <h3 class="ctl-title">Frame colour</h3>
+        <div class="swatches" id="swatches">
+          <button class="swatch" data-color="#141414" style="--c:#141414" title="Deep Black" aria-label="Deep Black"></button>
+          <button class="swatch" data-color="#1B2A4A" style="--c:#1B2A4A" title="Deep Navy" aria-label="Deep Navy"></button>
+          <button class="swatch" data-color="#2D4F3E" style="--c:#2D4F3E" title="Vintage Green" aria-label="Vintage Green"></button>
+          <button class="swatch" data-color="#FFFFFF" style="--c:#FFFFFF" title="White" aria-label="White"></button>
+          <button class="swatch" data-color="#4A3528" style="--c:#4A3528" title="Warm Espresso Brown" aria-label="Warm Espresso Brown"></button>
+          <button class="swatch" data-color="#5B101A" style="--c:#5B101A" title="Deep Red" aria-label="Deep Red"></button>
+        </div>
+      </section>
+
+      <section class="ctl">
+        <h3 class="ctl-title">Polka dots <span class="ctl-sub">on the frame</span></h3>
+        <div class="segmented" id="dot-sizes">
+          <button class="active" data-size="none">None</button>
+          <button data-size="small">Small</button>
+          <button data-size="medium">Medium</button>
+          <button data-size="large">Large</button>
+        </div>
+      </section>
+
+      <section class="ctl">
+        <h3 class="ctl-title">Stickers <span class="ctl-sub">click to sprinkle</span></h3>
+        <div class="sticker-grid" id="sticker-grid"></div>
+        <p class="sticker-selection" id="sticker-selection">Select a sticker on your strip to edit it.</p>
+        <div class="sticker-edit" aria-label="Edit selected sticker">
+          <button class="btn small ghost" id="sticker-smaller" type="button" disabled aria-label="Make selected sticker smaller">−</button>
+          <button class="btn small ghost" id="sticker-larger" type="button" disabled aria-label="Make selected sticker larger">+</button>
+          <button class="btn small ghost" id="sticker-delete" type="button" disabled>Delete sticker</button>
+        </div>
+        <div class="sticker-actions">
+          <button class="btn small ghost" id="shuffle-btn" type="button">Shuffle</button>
+          <button class="btn small ghost" id="clear-stickers-btn" type="button">Clear all</button>
+        </div>
+      </section>
+
+    </aside>
+  </div>
+</section>
+<div class="print-output" aria-hidden="true"><img id="print-image" alt="Your photo strip" /></div>
+
+<script src="app.js?v=actions-1"></script>
+</body>
+</html>
