@@ -126,7 +126,23 @@
 
   const video = $("#video");
   const previewCanvas = $("#preview-canvas");
-  const previewCtx = previewCanvas.getContext("2d");
+  const previewCtx = previewCanvas.getContext("2d", { willReadFrequently: true });
+
+  // Some mobile browsers accept the filter property but do not actually apply it.
+  function supportsCanvasGrayscale() {
+    const test = document.createElement("canvas");
+    test.width = test.height = 1;
+    const context = test.getContext("2d", { willReadFrequently: true });
+    if (!("filter" in context)) return false;
+    context.filter = "grayscale(1)";
+    context.fillStyle = "rgb(255,0,0)";
+    context.fillRect(0, 0, 1, 1);
+    const pixel = context.getImageData(0, 0, 1, 1).data;
+    return Math.abs(pixel[0] - pixel[1]) < 3 && Math.abs(pixel[1] - pixel[2]) < 3;
+  }
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const canvasGrayscaleWorks = !isIOS && supportsCanvasGrayscale();
 
   /** Centre-crop the live feed to a 3:4 portrait. */
   function videoCrop() {
@@ -174,11 +190,21 @@
     const { sx, sy, sw, sh } = videoCrop();
     c.save();
     c.clearRect(0, 0, w, h);
-    c.filter = "grayscale(1) brightness(1.07) contrast(1.07)";
+    if (canvasGrayscaleWorks) c.filter = "grayscale(1) brightness(1.07) contrast(1.07)";
     c.translate(w, 0);
     c.scale(-1, 1);
     c.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
     c.restore();
+    if (!canvasGrayscaleWorks) {
+      const frame = c.getImageData(0, 0, w, h);
+      const pixels = frame.data;
+      for (let i = 0; i < pixels.length; i += 4) {
+        const luminance = 0.2126 * pixels[i] + 0.7152 * pixels[i + 1] + 0.0722 * pixels[i + 2];
+        const gray = Math.max(0, Math.min(255, (luminance * 1.07 - 128) * 1.07 + 128));
+        pixels[i] = pixels[i + 1] = pixels[i + 2] = gray;
+      }
+      c.putImageData(frame, 0, 0);
+    }
     applyFilmLook(c, w, h);
   }
 
@@ -326,7 +352,7 @@
     const out = document.createElement("canvas");
     out.width = PHOTO_W;
     out.height = PHOTO_H;
-    composeFrame(out.getContext("2d"), lastMask, PHOTO_W, PHOTO_H);
+    composeFrame(out.getContext("2d", { willReadFrequently: true }), lastMask, PHOTO_W, PHOTO_H);
     return out;
   }
 
